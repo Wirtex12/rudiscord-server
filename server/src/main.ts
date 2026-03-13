@@ -1,25 +1,19 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-  // ✅ CORS для всех (для тестов на Render)
+  const app = await NestFactory.create(AppModule);
+  
+  // ✅ CORS для всех
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-
-  // Serve static files for uploads
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
-
+  
   // ✅ Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -28,21 +22,18 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  // ✅ Слушать все интерфейсы (ВАЖНО для Render!)
-  const host = process.env.HOST || '0.0.0.0';
-  const port = process.env.PORT || 3000;
-
-  await app.listen(port, host);
   
-  console.log('═══════════════════════════════════════════════════');
-  console.log('🚀 Voxit Backend is running!');
-  console.log(`📡 Host: ${host}`);
-  console.log(`📡 Port: ${port}`);
-  console.log(`🌐 URL: http://${host}:${port}`);
-  console.log(`💚 Health: http://${host}:${port}/api/health`);
-  console.log(`📁 Uploads: http://${host}:${port}/uploads/`);
-  console.log('═══════════════════════════════════════════════════');
+  // ✅ Прикрепи Socket.io адаптер (ВАЖНО!)
+  app.useWebSocketAdapter(new IoAdapter(app));
+  
+  // ✅ Слушать все интерфейсы
+  const host = process.env.HOST || '0.0.0.0';
+  const port = parseInt(process.env.PORT || '3000', 10);
+  
+  await app.listen(port, host);
+  console.log(`🚀 Backend running on: http://${host}:${port}`);
+  console.log(`📡 Health: http://${host}:${port}/api/health`);
+  console.log(`🔗 WebSocket: ws(s)://${host}:${port}/socket.io/`);
 }
 
 bootstrap();
