@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voxit Update</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: transparent;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      user-select: none;
+    }
+
+    .update-container {
+      width: 400px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #5865f2 0%, #3b4dcc 100%);
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+      color: #ffffff;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(88, 101, 242, 0.5);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 40px rgba(88, 101, 242, 0.8);
+      }
+    }
+
+    .title {
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .message {
+      color: #b9bbbe;
+      font-size: 0.95rem;
+      margin-bottom: 30px;
+      min-height: 24px;
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background-color: #2f3136;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #5865f2 0%, #3ba55c 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-text {
+      color: #72767d;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #2f3136;
+      border-top-color: #5865f2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #5865f2;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: #4752c4;
+    }
+
+    .btn-secondary {
+      background-color: #2f3136;
+      color: #b9bbbe;
+    }
+
+    .btn-secondary:hover {
+      background-color: #40444b;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Statuses */
+    .status-checking .spinner {
+      display: block;
+    }
+
+    .status-checking .progress-container {
+      display: none;
+    }
+
+    .status-downloading .spinner {
+      display: none;
+    }
+
+    .status-downloading .progress-container {
+      display: block;
+    }
+
+    .status-starting .logo {
+      animation: none;
+      background: linear-gradient(135deg, #3ba55c 0%, #2d7d46 100%);
+    }
+
+    .status-error .logo {
+      background: linear-gradient(135deg, #ed4245 0%, #c23a3d 100%);
+    }
+  </style>
+</head>
+<body>
+  <div class="update-container status-checking" id="updateContainer">
+    <div class="logo" id="logo">V</div>
+    
+    <div class="spinner" id="spinner"></div>
+    
+    <h1 class="title" id="title">Voxit</h1>
+    
+    <p class="message" id="message">Checking for updates...</p>
+    
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <p class="progress-text" id="progressText">0%</p>
+    
+    <div class="buttons hidden" id="buttons">
+      <button class="btn btn-secondary" id="skipBtn">Skip</button>
+      <button class="btn btn-primary" id="restartBtn">Restart Now</button>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const container = document.getElementById('updateContainer');
+    const message = document.getElementById('message');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const buttons = document.getElementById('buttons');
+    const skipBtn = document.getElementById('skipBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // Listen for update status from main process
+    ipcRenderer.on('update-status', (event, data) => {
+      console.log('Update status:', data);
+
+      switch (data.status) {
+        case 'checking':
+          container.className = 'update-container status-checking';
+          message.textContent = 'Checking for updates...';
+          progressBar.style.width = '0%';
+          progressText.textContent = '0%';
+          buttons.classList.add('hidden');
+          break;
+
+        case 'downloading':
+          container.className = 'update-container status-downloading';
+          message.textContent = data.message;
+          progressBar.style.width = `${data.progress}%`;
+          progressText.textContent = `${data.progress}%`;
+          buttons.classList.add('hidden');
+          break;
+
+        case 'installing':
+          container.className = 'update-container status-downloading';
+          message.textContent = 'Installing update...';
+          progressBar.style.width = '100%';
+          progressText.textContent = '100%';
+          buttons.classList.add('hidden');
+          break;
+
+        case 'starting':
+          container.className = 'update-container status-starting';
+          message.textContent = 'Starting...';
+          progressBar.style.width = '100%';
+          progressText.textContent = '';
+          buttons.classList.add('hidden');
+          break;
+
+        case 'update-available':
+          container.className = 'update-container status-checking';
+          message.textContent = 'Update available! Download now?';
+          buttons.classList.remove('hidden');
+          break;
+
+        case 'error':
+          container.className = 'update-container status-error';
+          message.textContent = data.message;
+          progressBar.style.width = '0%';
+          progressText.textContent = '';
+          buttons.classList.add('hidden');
+          break;
+      }
+    });
+
+    // Button handlers
+    skipBtn.addEventListener('click', () => {
+      ipcRenderer.send('skip-update');
+    });
+
+    restartBtn.addEventListener('click', () => {
+      ipcRenderer.send('restart-app');
+    });
+  </script>
+</body>
+</html>

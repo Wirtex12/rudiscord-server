@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  userId              String?  @unique
+  username            String   @unique
+  email               String   @unique
+  avatar              String?
+  passwordHash        String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  sentFriendships     Friendship[] @relation("sentFriendships")
+  receivedFriendships Friendship[] @relation("receivedFriendships")
+  
+  conversations       Conversation[] @relation("ConversationParticipants")
+  sentMessages        Message[]
+}
+
+model Friendship {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  status     String   @default("pending")  // pending, accepted, blocked
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender     User     @relation("sentFriendships", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("receivedFriendships", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Two participants for direct messages
+  participants User[] @relation("ConversationParticipants")
+  
+  messages Message[]
+}
+
+model Message {
+  id             String     @id @default(uuid())
+  content        String
+  createdAt      DateTime   @default(now())
+  readAt         DateTime?
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

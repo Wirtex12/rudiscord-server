@@ -1,0 +1,158 @@
+.call-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.call-modal {
+  background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.3s ease;
+}
+
+.call-modal.ended {
+  background: linear-gradient(135deg, #ed4245 0%, #c03537 100%);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.call-avatar {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #ffffff;
+  overflow: hidden;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.call-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.call-username {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.call-status {
+  margin: 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.call-controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.control-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn.accept {
+  background-color: #3ba55c;
+  color: #ffffff;
+}
+
+.control-btn.accept:hover {
+  background-color: #2d7d46;
+  transform: scale(1.1);
+}
+
+.control-btn.reject,
+.control-btn.end {
+  background-color: #ed4245;
+  color: #ffffff;
+}
+
+.control-btn.reject:hover,
+.control-btn.end:hover {
+  background-color: #c03537;
+  transform: scale(1.1);
+}
+
+.control-btn.mute {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.control-btn.mute:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.control-btn.mute.active {
+  background-color: #ffffff;
+  color: #ed4245;
+}
+
+/* Hidden video elements for WebRTC */
+.webrtc-videos {
+  display: none;
+}
+
+.webrtc-videos video {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,270 @@
+.friends-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.friends-modal {
+  background-color: #36393f;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2f3136;
+}
+
+.friends-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #b9bbbe;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ffffff;
+}
+
+.friends-tabs {
+  display: flex;
+  border-bottom: 1px solid #2f3136;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  color: #b9bbbe;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  background-color: rgba(88, 101, 242, 0.1);
+  color: #ffffff;
+}
+
+.tab.active {
+  color: #5865f2;
+  border-bottom-color: #5865f2;
+}
+
+.friends-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 60vh;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.friends-list,
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty {
+  text-align: center;
+  color: #72767d;
+  padding: 40px 20px;
+}
+
+.friend-item,
+.request-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #2f3136;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover,
+.request-item:hover {
+  background-color: #36393f;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #5865f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.friend-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.friend-name {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.friend-id {
+  color: #72767d;
+  font-size: 0.8rem;
+  font-family: 'Consolas', monospace;
+}
+
+.remove-btn,
+.accept-btn,
+.decline-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-btn {
+  background-color: #ed4245;
+  color: #ffffff;
+}
+
+.remove-btn:hover {
+  background-color: #c03537;
+}
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.accept-btn {
+  background-color: #3ba55c;
+  color: #ffffff;
+}
+
+.accept-btn:hover {
+  background-color: #2d7d46;
+}
+
+.decline-btn {
+  background-color: #4f545c;
+  color: #ffffff;
+}
+
+.decline-btn:hover {
+  background-color: #686d73;
+}
+
+.add-friend-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-description {
+  color: #b9bbbe;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.form-group {
+  display: flex;
+  gap: 12px;
+}
+
+.user-id-input {
+  flex: 1;
+  background-color: #23272a;
+  border: 1px solid #23272a;
+  border-radius: 4px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-family: 'Consolas', monospace;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.user-id-input:focus {
+  outline: none;
+  border-color: #5865f2;
+}
+
+.send-request-btn {
+  background-color: #5865f2;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.send-request-btn:hover:not(:disabled) {
+  background-color: #4752c4;
+}
+
+.send-request-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-hint {
+  color: #72767d;
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: 8px;
+}

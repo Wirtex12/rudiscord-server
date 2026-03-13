@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voxit</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <!-- Polyfills для Node.js globals (нужны для simple-peer / WebRTC) -->
+    <script>
+      // Polyfill для process (нужен для simple-peer)
+      window.process = {
+        env: {
+          NODE_ENV: 'development',
+        },
+        version: '',
+      };
+      
+      // Polyfill для global
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+      
+      // Polyfill для Buffer
+      if (typeof Buffer === 'undefined') {
+        window.Buffer = {
+          isBuffer: () => false,
+        };
+      }
+    </script>
+    
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

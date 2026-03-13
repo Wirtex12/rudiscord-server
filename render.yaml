@@ -1,0 +1,35 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: voxit-backend
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: voxit-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: SOCKET_CORS_ORIGIN
+        value: "*"
+
+databases:
+  # PostgreSQL Database
+  - name: voxit-db
+    databaseName: voxit
+    plan: free
+    region: frankfurt
+    ipAllowList: []  # Allow all for now (restrict later)
