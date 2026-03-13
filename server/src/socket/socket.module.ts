@@ -6,16 +6,15 @@ export class SocketModule implements OnModuleInit, OnModuleDestroy {
   private io: Server;
 
   onModuleInit() {
-    const port = process.env.SOCKET_PORT || 3001;
+   const port = parseInt(process.env.PORT || '3001', 10);
 
-    this.io = new Server(port, {
-      cors: {
-        origin: process.env.SOCKET_CORS_ORIGIN || '*',
-        credentials: true,
-      },
-      // ✅ Важно для Render (HTTPS/WSS)
-      transports: ['websocket', 'polling'],
-    });
+this.io = new Server(port, {  // ← Теперь port всегда number!
+  cors: {
+    origin: process.env.SOCKET_CORS_ORIGIN || '*',
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+});
 
     this.io.on('connection', (socket) => {
       console.log(`🔌 User connected: ${socket.id}`);
