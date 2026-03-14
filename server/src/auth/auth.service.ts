@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Tokens, JwtPayload } from './types/tokens.types';
+import { Tokens, User, AuthResponse, JwtPayload } from './types/tokens.types';
 import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
 import * as crypto from 'crypto';
@@ -75,7 +75,7 @@ export class AuthService {
     return userId;
   }
 
-  async register(registerDto: RegisterDto): Promise<{ message: string; email: string; userId: string }> {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     const existingEmail = await this.prisma.user.findUnique({
       where: { email: registerDto.email },
     });
@@ -96,18 +96,47 @@ export class AuthService {
         email: registerDto.email,
         passwordHash,
       },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        email: true,
+        avatar: true,
+        createdAt: true,
+      },
     });
 
     await this.sendVerificationCode(registerDto.email, registerDto.username, registerDto.password);
 
-    return { message: 'Verification code sent to email', email: registerDto.email, userId };
+    const tokens = await this.generateTokens(user.id, user.username, user.userId || '', true);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        userId: user.userId || undefined,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+      },
+    };
   }
 
-  async login(loginDto: LoginDto, options: LoginOptions = {}): Promise<Tokens> {
+  async login(loginDto: LoginDto, options: LoginOptions = {}): Promise<AuthResponse> {
     const { rememberMe = false } = options;
 
     const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        email: true,
+        avatar: true,
+        passwordHash: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
@@ -120,7 +149,19 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.generateTokens(user.id, user.username, user.userId || '', rememberMe);
+    const tokens = await this.generateTokens(user.id, user.username, user.userId || '', rememberMe);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        userId: user.userId || undefined,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+      },
+    };
   }
 
   async verifyToken(token: string): Promise<{ valid: boolean; user?: { id: string; username: string; email: string; userId?: string } }> {
@@ -480,7 +521,7 @@ export class AuthService {
     }
   }
 
-  async verifyCode(email: string, code: string): Promise<Tokens> {
+  async verifyCode(email: string, code: string): Promise<AuthResponse> {
     const record = this.verificationCodes.get(email);
 
     if (!record) {
@@ -500,13 +541,33 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        email: true,
+        avatar: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
       throw new BadRequestException('User not found.');
     }
 
-    return this.generateTokens(user.id, user.username, user.userId || '', true);
+    const tokens = await this.generateTokens(user.id, user.username, user.userId || '', true);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        userId: user.userId || undefined,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+      },
+    };
   }
 
   private async generateTokens(userId: string, username: string, userUniqueId: string, rememberMe: boolean = false): Promise<Tokens> {
@@ -531,9 +592,17 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async uploadAvatar(userId: string, avatarUrl: string): Promise<{ message: string; avatarUrl: string }> {
+  async uploadAvatar(userId: string, avatarUrl: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        email: true,
+        avatar: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
@@ -545,12 +614,27 @@ export class AuthService {
       data: { avatar: avatarUrl },
     });
 
-    return { message: 'Avatar uploaded successfully', avatarUrl };
+    return {
+      id: user.id,
+      userId: user.userId || undefined,
+      username: user.username,
+      email: user.email,
+      avatar: avatarUrl,
+      createdAt: user.createdAt,
+    };
   }
 
-  async removeAvatar(userId: string): Promise<{ message: string }> {
+  async removeAvatar(userId: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        email: true,
+        avatar: true,
+        createdAt: true,
+      },
     });
 
     if (!user) {
@@ -562,7 +646,14 @@ export class AuthService {
       data: { avatar: null },
     });
 
-    return { message: 'Avatar removed successfully' };
+    return {
+      id: user.id,
+      userId: user.userId || undefined,
+      username: user.username,
+      email: user.email,
+      avatar: null,
+      createdAt: user.createdAt,
+    };
   }
 
   async deleteAccount(userId: string): Promise<{ message: string }> {

@@ -1,7 +1,7 @@
 /* Chat Dashboard - New Layout with Left Server Menu */
 .chat-dashboard {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 32px); /* Отнимаем высоту TitleBar */
   background-color: #36393f;
   color: #dcddde;
   overflow: hidden;

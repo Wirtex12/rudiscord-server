@@ -7,6 +7,9 @@ declare global {
       send: (channel: string, data: unknown) => void;
       receive: (channel: string, func: (...args: unknown[]) => void) => void;
       removeListener: (channel: string, func: (...args: unknown[]) => void) => void;
+      minimizeWindow: () => void;
+      maximizeWindow: () => void;
+      closeWindow: () => void;
     };
     autoUpdate?: {
       checkForUpdates: () => void;

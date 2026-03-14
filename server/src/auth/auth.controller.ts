@@ -8,7 +8,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
-import { Tokens } from './types/tokens.types';
+import { AuthResponse, User } from './types/tokens.types';
 import { Request } from 'express';
 
 export interface LoginRequest extends LoginDto {
@@ -54,13 +54,13 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto): Promise<{ message: string; email: string }> {
+  async register(@Body() registerDto: RegisterDto): Promise<AuthResponse> {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginRequest: LoginRequest): Promise<Tokens> {
+  async login(@Body() loginRequest: LoginRequest): Promise<AuthResponse> {
     const { rememberMe = false, ...loginDto } = loginRequest;
     return this.authService.login(loginDto, { rememberMe });
   }
@@ -83,11 +83,11 @@ export class AuthController {
   async uploadAvatar(
     @UploadedFile() file: Express.Multer.File,
     @Body('userId') userId: string,
-  ): Promise<{ message: string; avatarUrl: string }> {
+  ): Promise<User> {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    
+
     if (!userId) {
       throw new Error('User ID is required');
     }
@@ -98,7 +98,7 @@ export class AuthController {
 
   @Post('remove-avatar')
   @HttpCode(HttpStatus.OK)
-  async removeAvatar(@Body('userId') userId: string): Promise<{ message: string }> {
+  async removeAvatar(@Body('userId') userId: string): Promise<User> {
     return this.authService.removeAvatar(userId);
   }
 
@@ -140,7 +140,7 @@ export class AuthController {
 
   @Post('verify-code')
   @HttpCode(HttpStatus.OK)
-  async verifyCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<Tokens> {
+  async verifyCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<AuthResponse> {
     return this.authService.verifyCode(verifyCodeDto.email, verifyCodeDto.code);
   }
 }

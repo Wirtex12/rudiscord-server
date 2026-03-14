@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: calc(100vh - 32px); /* Отнимаем высоту TitleBar */
   padding: 20px;
 }
 

@@ -20,6 +20,16 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.removeListener(channel, func);
     }
   },
+  // Window controls
+  minimizeWindow: () => {
+    ipcRenderer.send('minimize-window');
+  },
+  maximizeWindow: () => {
+    ipcRenderer.send('maximize-window');
+  },
+  closeWindow: () => {
+    ipcRenderer.send('close-window');
+  },
 });
 
 // Auto-update API for renderer process

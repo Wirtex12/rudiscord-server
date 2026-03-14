@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 import { ChatDashboard } from './components/ChatDashboard';
+import { TitleBar } from './components/TitleBar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const PROTOCOL = 'voxit';
@@ -20,16 +21,6 @@ interface User {
 
 type Tab = 'login' | 'register';
 type Screen = 'form' | 'verification' | 'chat' | 'forgot-password' | 'reset-password';
-
-// Declare global electron API
-declare global {
-  interface Window {
-    electron?: {
-      receive: (channel: string, func: (...args: unknown[]) => void) => void;
-      removeListener: (channel: string, func: (...args: unknown[]) => void) => void;
-    };
-  }
-}
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('login');
@@ -458,28 +449,222 @@ function App() {
   };
 
   if (screen === 'chat' && currentUser) {
-    return <ChatDashboard user={currentUser} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />;
+    return (
+      <>
+        <TitleBar />
+        <ChatDashboard user={currentUser} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />
+      </>
+    );
   }
 
   if (screen === 'forgot-password') {
     return (
+      <>
+        <TitleBar />
+        <div className="app">
+          <div className="container">
+            <div className="header">
+              <h1>Voxit</h1>
+              <p>Reset your password</p>
+            </div>
+
+            <p className="form-description">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+
+            <form className="form" onSubmit={handleForgotPassword}>
+              <div className="form-group">
+                <label htmlFor="forgot-email">Email</label>
+                <input
+                  type="email"
+                  id="forgot-email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {message && (
+                <div className={`message ${message.type}`}>
+                  {message.text}
+                </div>
+              )}
+
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+
+              <button
+                type="button"
+                className="back-link-btn"
+                onClick={() => navigateToScreen('form')}
+              >
+                ← Back to Login
+              </button>
+            </form>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (screen === 'reset-password') {
+    return (
+      <>
+        <TitleBar />
+        <div className="app">
+          <div className="container">
+            <div className="header">
+              <h1>Voxit</h1>
+              <p>Create new password</p>
+            </div>
+
+            <p className="form-description">
+              Enter your new password below.
+            </p>
+
+            <form className="form" onSubmit={handleResetPassword}>
+              <div className="form-group">
+                <label htmlFor="new-password">New Password</label>
+                <input
+                  type="password"
+                  id="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                  disabled={loading || !resetToken}
+                  minLength={6}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirm-password">Confirm Password</label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                  disabled={loading || !resetToken}
+                  minLength={6}
+                />
+              </div>
+
+              {!resetToken && (
+                <div className="message error">
+                  No reset token found. Please request a password reset link.
+                </div>
+              )}
+
+              {message && (
+                <div className={`message ${message.type}`}>
+                  {message.text}
+                </div>
+              )}
+
+              <button type="submit" className="submit-btn" disabled={loading || !resetToken}>
+                {loading ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (screen === 'verification') {
+    return (
+      <>
+        <TitleBar />
+        <div className="app">
+          <div className="container">
+            <div className="header">
+              <h1>Voxit</h1>
+              <p>Enter verification code</p>
+            </div>
+
+            <p className="verification-subtitle">
+              We sent a 6-digit code to <strong>{email}</strong>
+            </p>
+            <p className="verification-note">Check your email inbox (and spam folder)</p>
+
+            <div className="code-inputs" onPaste={handlePaste}>
+              {verificationCode.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => (codeInputRefs.current[index] = el)}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleCodeChange(index, e.target.value)}
+                  onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                  disabled={loading}
+                  className="code-input"
+                />
+              ))}
+            </div>
+
+            {message && (
+              <div className={`message ${message.type}`}>
+                {message.text}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="submit-btn confirm-btn"
+              onClick={handleVerifyCode}
+              disabled={loading}
+            >
+              {loading ? 'Verifying...' : 'Confirm'}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <TitleBar />
       <div className="app">
         <div className="container">
           <div className="header">
             <h1>Voxit</h1>
-            <p>Reset your password</p>
+            <p>Messenger</p>
           </div>
 
-          <p className="form-description">
-            Enter your email address and we'll send you a link to reset your password.
-          </p>
+          <div className="tabs">
+            <button
+              className={`tab ${activeTab === 'login' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('login');
+                setMessage(null);
+              }}
+            >
+              Log In
+            </button>
+            <button
+              className={`tab ${activeTab === 'register' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('register');
+                setMessage(null);
+              }}
+            >
+              Register
+            </button>
+          </div>
 
-          <form className="form" onSubmit={handleForgotPassword}>
+          <form className="form" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
             <div className="form-group">
-              <label htmlFor="forgot-email">Email</label>
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
-                id="forgot-email"
+                id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
@@ -488,6 +673,49 @@ function App() {
               />
             </div>
 
+            {activeTab === 'register' && (
+              <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            {activeTab === 'login' && (
+              <div className="remember-me-group">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-label">Remember me</span>
+                </label>
+              </div>
+            )}
+
             {message && (
               <div className={`message ${message.type}`}>
                 {message.text}
@@ -495,248 +723,28 @@ function App() {
             )}
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              {loading
+                ? activeTab === 'login'
+                  ? 'Logging in...'
+                  : 'Registering...'
+                : activeTab === 'login'
+                  ? 'Log In'
+                  : 'Register'}
             </button>
 
-            <button
-              type="button"
-              className="back-link-btn"
-              onClick={() => navigateToScreen('form')}
-            >
-              ← Back to Login
-            </button>
+            {activeTab === 'login' && (
+              <button
+                type="button"
+                className="forgot-password-btn"
+                onClick={() => navigateToScreen('forgot-password')}
+              >
+                Forgot Password?
+              </button>
+            )}
           </form>
         </div>
       </div>
-    );
-  }
-
-  if (screen === 'reset-password') {
-    return (
-      <div className="app">
-        <div className="container">
-          <div className="header">
-            <h1>Voxit</h1>
-            <p>Create new password</p>
-          </div>
-
-          <p className="form-description">
-            Enter your new password below.
-          </p>
-
-          <form className="form" onSubmit={handleResetPassword}>
-            <div className="form-group">
-              <label htmlFor="new-password">New Password</label>
-              <input
-                type="password"
-                id="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter new password"
-                required
-                disabled={loading || !resetToken}
-                minLength={6}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="confirm-password">Confirm Password</label>
-              <input
-                type="password"
-                id="confirm-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                required
-                disabled={loading || !resetToken}
-                minLength={6}
-              />
-            </div>
-
-            {!resetToken && (
-              <div className="message error">
-                No reset token found. Please request a password reset link.
-              </div>
-            )}
-
-            {message && (
-              <div className={`message ${message.type}`}>
-                {message.text}
-              </div>
-            )}
-
-            <button type="submit" className="submit-btn" disabled={loading || !resetToken}>
-              {loading ? 'Resetting...' : 'Reset Password'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  if (screen === 'verification') {
-    return (
-      <div className="app">
-        <div className="container">
-          <div className="header">
-            <h1>Voxit</h1>
-            <p>Enter verification code</p>
-          </div>
-
-          <p className="verification-subtitle">
-            We sent a 6-digit code to <strong>{email}</strong>
-          </p>
-          <p className="verification-note">Check your email inbox (and spam folder)</p>
-
-          <div className="code-inputs" onPaste={handlePaste}>
-            {verificationCode.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => (codeInputRefs.current[index] = el)}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleCodeChange(index, e.target.value)}
-                onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                disabled={loading}
-                className="code-input"
-              />
-            ))}
-          </div>
-
-          {message && (
-            <div className={`message ${message.type}`}>
-              {message.text}
-            </div>
-          )}
-
-          <button
-            type="button"
-            className="submit-btn confirm-btn"
-            onClick={handleVerifyCode}
-            disabled={loading}
-          >
-            {loading ? 'Verifying...' : 'Confirm'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="app">
-      <div className="container">
-        <div className="header">
-          <h1>Voxit</h1>
-          <p>Messenger</p>
-        </div>
-
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'login' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('login');
-              setMessage(null);
-            }}
-          >
-            Log In
-          </button>
-          <button
-            className={`tab ${activeTab === 'register' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('register');
-              setMessage(null);
-            }}
-          >
-            Register
-          </button>
-        </div>
-
-        <form className="form" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {activeTab === 'register' && (
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                required
-                disabled={loading}
-              />
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {activeTab === 'login' && (
-            <div className="remember-me-group">
-              <label className="checkbox-container">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={loading}
-                />
-                <span className="checkmark"></span>
-                <span className="checkbox-label">Remember me</span>
-              </label>
-            </div>
-          )}
-
-          {message && (
-            <div className={`message ${message.type}`}>
-              {message.text}
-            </div>
-          )}
-
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading
-              ? activeTab === 'login'
-                ? 'Logging in...'
-                : 'Registering...'
-              : activeTab === 'login'
-                ? 'Log In'
-                : 'Register'}
-          </button>
-
-          {activeTab === 'login' && (
-            <button
-              type="button"
-              className="forgot-password-btn"
-              onClick={() => navigateToScreen('forgot-password')}
-            >
-              Forgot Password?
-            </button>
-          )}
-        </form>
-      </div>
-    </div>
+    </>
   );
 }
 
