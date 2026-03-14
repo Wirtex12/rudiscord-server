@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -32,7 +29,7 @@ model Friendship {
   id         String   @id @default(uuid())
   senderId   String
   receiverId String
-  status     String   @default("pending")  // pending, accepted, blocked
+  status     String   @default("pending")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -48,11 +45,9 @@ model Conversation {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Two participants for direct messages
+
   participants User[] @relation("ConversationParticipants")
-  
-  messages Message[]
+  messages     Message[]
 }
 
 model Message {
@@ -60,10 +55,9 @@ model Message {
   content        String
   createdAt      DateTime   @default(now())
   readAt         DateTime?
-  
+
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
   senderId       String
   sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }

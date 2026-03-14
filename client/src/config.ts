@@ -3,7 +3,7 @@ export const API_URL = 'https://voxit-backend.onrender.com';
 export const SOCKET_URL = 'https://voxit-backend.onrender.com';
 
 // Таймауты (мс)
-export const API_TIMEOUT = 30000;  // 30 секунд (на случай "пробуждения" Render)
+export const API_TIMEOUT = 5000;  // 5 секунд (на случай "пробуждения" Render)
 export const SOCKET_RECONNECT_DELAY = 1000;
 export const SOCKET_RECONNECT_ATTEMPTS = 5;
 

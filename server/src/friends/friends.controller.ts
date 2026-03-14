@@ -35,7 +35,7 @@ export class FriendsController {
   @Get('with-conversations')
   async getFriendsWithConversations(@Req() req: RequestWithUser) {
     const userId = req.user.sub;
-    return this.friendsService.getFriendsWithConversations(userId);
+    return this.friendsService.getFriends(userId);
   }
 
   /**
@@ -53,7 +53,7 @@ export class FriendsController {
   @Get('pending')
   async getPendingRequests(@Req() req: RequestWithUser) {
     const userId = req.user.sub;
-    return this.friendsService.getPendingRequests(userId);
+    return this.friendsService.getIncomingRequests(userId);
   }
 
   /**
@@ -66,7 +66,7 @@ export class FriendsController {
     @Body() dto: SendFriendRequestDto,
   ) {
     const senderId = req.user.sub;
-    return this.friendsService.sendFriendRequest(senderId, dto.userId);
+    return this.friendsService.sendRequest(senderId, dto.userId);
   }
 
   /**
@@ -78,7 +78,7 @@ export class FriendsController {
     @Body() dto: AcceptFriendRequestDto,
   ) {
     const receiverId = req.user.sub;
-    return this.friendsService.acceptFriendRequest(dto.requestId, receiverId);
+    return this.friendsService.acceptRequest(dto.requestId, receiverId);
   }
 
   /**
@@ -90,7 +90,7 @@ export class FriendsController {
     @Body() dto: DeclineFriendRequestDto,
   ) {
     const receiverId = req.user.sub;
-    return this.friendsService.declineFriendRequest(dto.requestId, receiverId);
+    return this.friendsService.rejectRequest(receiverId, dto.requestId);
   }
 
   /**
@@ -102,7 +102,7 @@ export class FriendsController {
     @Body() dto: { requestId: string },
   ) {
     const senderId = req.user.sub;
-    return this.friendsService.cancelFriendRequest(dto.requestId, senderId);
+    return this.friendsService.rejectRequest(senderId, dto.requestId);
   }
 
   /**

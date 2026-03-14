@@ -25,7 +25,8 @@
     "prisma:studio": "prisma studio",
     "prisma:reset": "prisma migrate reset",
     "docker:build": "docker build -t voxit-server .",
-    "docker:run": "docker run -p 3000:3000 --env-file .env voxit-server"
+    "docker:run": "docker run -p 3000:3000 --env-file .env voxit-server",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
