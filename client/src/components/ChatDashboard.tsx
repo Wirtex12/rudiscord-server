@@ -63,21 +63,15 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
     call,
     callAccepted,
     callEnded,
-    calling: _calling,
-    isMuted: _isMuted,
-    callUser,
+    isMuted,
+    toggleMute,
+    setCallAccepted,
+    setCallEnded,
+    startCall,
     acceptCall,
     rejectCall,
     endCall,
-    toggleMute,
-  } = useWebRTC({
-    userId: user.id,
-    onCallReceived: (_from, fromUsername) => {
-      console.log('Incoming call from', fromUsername);
-      setIsOutgoingCall(false);
-      setShowCallModal(true);
-    },
-  });
+  } = useWebRTC(user?.id);
 
   // Sync editUsername when user.username changes
   useEffect(() => {
@@ -139,31 +133,29 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
     setMessages([...messages, newMessage]);
   };
 
+  // Call handlers
   const handleStartCall = () => {
-    if (selectedFriend) {
-      setIsOutgoingCall(true);
-      setShowCallModal(true);
-      callUser(selectedFriend.userId || '', user.username);
-    }
+    if (!selectedFriend) return;
+    setIsOutgoingCall(true);
+    setShowCallModal(true);
+    setCallAccepted(false);
+    setCallEnded(false);
+    startCall(selectedFriend.id);
   };
 
   const handleAcceptCall = () => {
     acceptCall();
+    setShowCallModal(false);
   };
 
   const handleRejectCall = () => {
-    console.log('📞 handleRejectCall called');
-    // Передать call данные в rejectCall
-    rejectCall(call);
+    rejectCall();
     setShowCallModal(false);
-    setIsOutgoingCall(false);
   };
 
   const handleEndCall = () => {
-    console.log('📞 handleEndCall called');
     endCall();
     setShowCallModal(false);
-    setIsOutgoingCall(false);
   };
 
   const handleLogoutClick = () => {
@@ -625,17 +617,17 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
       </div>
 
       <FriendsModal isOpen={showFriendsModal} onClose={() => setShowFriendsModal(false)} />
-      
+
       {/* Call Modal */}
       <CallModal
-        isOpen={showCallModal || (call && !callEnded)}
+        isOpen={showCallModal || (call !== null && !callEnded)}
         isOutgoing={isOutgoingCall}
         friendUsername={call?.fromUsername || selectedFriend?.username || ''}
-        friendAvatar={call?.fromAvatar || selectedFriend?.avatar}
+        friendAvatar={selectedFriend?.avatar}
         onAccept={handleAcceptCall}
         onReject={handleRejectCall}
         onEnd={handleEndCall}
-        isMuted={_isMuted}
+        isMuted={isMuted}
         onToggleMute={toggleMute}
         callAccepted={callAccepted}
         callEnded={callEnded}

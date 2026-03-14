@@ -1,265 +1,277 @@
 import { useEffect, useRef, useState } from 'react';
-import Peer from 'simple-peer';
-import io from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import { SOCKET_URL, SOCKET_RECONNECT_DELAY, SOCKET_RECONNECT_ATTEMPTS } from '../config';
 
-interface UseWebRTCProps {
-  userId: string;
-  onCallReceived?: (from: string, fromUsername: string) => void;
-}
+let socket: Socket | null = null;
 
-export function useWebRTC({ userId, onCallReceived }: UseWebRTCProps) {
-  const [socket, setSocket] = useState<any>(null);
-  const [call, setCall] = useState<any>(null);
+export const useWebRTC = (userId?: string) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [isCalling, setIsCalling] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<{ from: string; fromUsername: string; offer: RTCSessionDescriptionInit } | null>(null);
   const [callAccepted, setCallAccepted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [calling, setCalling] = useState(false);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  const myVideo = useRef<HTMLVideoElement>(null);
-  const userVideo = useRef<HTMLVideoElement>(null);
-  const peer = useRef<Peer | null>(null);
-
+  // Инициализация Socket.io
   useEffect(() => {
-    // Initialize Socket.io
-    const newSocket = io('http://localhost:3001');
-    setSocket(newSocket);
+    if (!socket) {
+      socket = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: SOCKET_RECONNECT_ATTEMPTS,
+        reconnectionDelay: SOCKET_RECONNECT_DELAY,
+        autoConnect: true,
+      });
 
-    newSocket.on('connect', () => {
-      console.log('Connected to signaling server');
-      newSocket.emit('join', userId);
-    });
+      // Обработчики подключения
+      socket.on('connect', () => {
+        console.log('✅ Socket connected:', socket?.id);
+        setIsConnected(true);
+        
+        // Присоединяемся к комнате пользователя
+        if (userId) {
+          socket?.emit('join', userId);
+        }
+      });
 
-    // Incoming call
-    newSocket.on('incoming-call', (data: { from: string; fromUsername: string; offer: unknown }) => {
-      setCall(data as any);
-      setCalling(true);
-      if (onCallReceived) {
-        onCallReceived(data.from, data.fromUsername);
-      }
-    });
+      socket.on('disconnect', (reason) => {
+        console.log('❌ Socket disconnected:', reason);
+        setIsConnected(false);
+      });
 
-    // Call accepted
-    newSocket.on('call-accepted', (data: { from: string; answer: unknown }) => {
-      setCallAccepted(true);
-      if (peer.current) {
-        peer.current.signal(data.answer as any);
-      }
-    });
+      socket.on('connect_error', (error) => {
+        console.error('🔴 Socket connection error:', error.message);
+        setIsConnected(false);
+      });
 
-    // Call rejected
-    newSocket.on('call-rejected', () => {
-      setCallEnded(true);
-      setCalling(false);
-    });
+      // Входящий звонок
+      socket.on('incoming-call', (data: { from: string; fromUsername: string; offer: RTCSessionDescriptionInit }) => {
+        console.log('📞 Incoming call from:', data.fromUsername);
+        setIncomingCall(data);
+      });
 
-    // Call ended
-    newSocket.on('call-ended', () => {
-      setCallEnded(true);
-      setCallAccepted(false);
-      setCalling(false);
-      if (peer.current) {
-        peer.current.destroy();
-      }
-    });
+      // Звонок принят
+      socket.on('call-accepted', async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
+        console.log('✅ Call accepted');
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+      });
 
-    // ICE candidate
-    newSocket.on('ice-candidate', (data: { from: string; candidate: any }) => {
-      if (peer.current && data.candidate) {
-        peer.current.addStream(data.candidate);
-      }
-    });
+      // Звонок отклонён
+      socket.on('call-rejected', () => {
+        console.log('❌ Call rejected');
+        setIncomingCall(null);
+        setIsCalling(false);
+        endCall();
+      });
+
+      // Звонок завершён
+      socket.on('call-ended', () => {
+        console.log('📞 Call ended');
+        setIncomingCall(null);
+        setIsCalling(false);
+        endCall();
+      });
+
+      // ICE кандидат
+      socket.on('ice-candidate', async (data: { from: string; candidate: RTCIceCandidateInit }) => {
+        if (peerConnectionRef.current && data.candidate) {
+          try {
+            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (error) {
+            console.error('Error adding ICE candidate:', error);
+          }
+        }
+      });
+    }
 
     return () => {
-      newSocket.disconnect();
-      if (peer.current) {
-        peer.current.destroy();
-      }
+      // Не закрываем сокет при размонтировании, он глобальный
     };
   }, [userId]);
 
-  // Get user media
-  const getMedia = async () => {
+  // Обновляем комнату при изменении userId
+  useEffect(() => {
+    if (socket && userId && isConnected) {
+      socket.emit('join', userId);
+    }
+  }, [userId, isConnected]);
+
+  // Создание PeerConnection
+  const createPeerConnection = () => {
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ],
+    });
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && socket) {
+        socket.emit('ice-candidate', {
+          to: incomingCall?.from || '',
+          candidate: event.candidate,
+          from: userId || '',
+        });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      if (remoteVideoRef.current && event.streams[0]) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    peerConnectionRef.current = pc;
+    return pc;
+  };
+
+  // Начало звонка
+  const startCall = async (targetUserId: string) => {
+    if (!socket || !userId) return;
+
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true,
-        video: false 
-      });
-      setStream(mediaStream);
-      if (myVideo.current) {
-        myVideo.current.srcObject = mediaStream;
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStreamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
-      return mediaStream;
-    } catch (error) {
-      console.error('Error accessing media devices:', error);
-      throw error;
-    }
-  };
 
-  // Call user
-  const callUser = async (to: string, fromUsername: string) => {
-    const mediaStream = await getMedia();
-    setCalling(true);
+      const pc = createPeerConnection();
 
-    peer.current = new Peer({
-      initiator: true,
-      trickle: false,
-      stream: mediaStream,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      },
-    });
-
-    peer.current.on('signal', (data: any) => {
-      socket.emit('call-user', {
-        to,
-        from: userId,
-        fromUsername,
-        offer: data,
-      });
-    });
-
-    peer.current.on('stream', (remoteStream: MediaStream) => {
-      if (userVideo.current) {
-        userVideo.current.srcObject = remoteStream;
-      }
-    });
-  };
-
-  // Accept call
-  const acceptCall = async () => {
-    console.log('📞 Accepting call...');
-    
-    // Проверка на null
-    if (!call || !call.from || !call.offer) {
-      console.error('❌ Cannot accept call: call data is null');
-      return;
-    }
-    
-    const mediaStream = await getMedia();
-    setCallAccepted(true);
-
-    peer.current = new Peer({
-      initiator: false,
-      trickle: false,
-      stream: mediaStream,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      },
-    });
-
-    peer.current.on('signal', (data: any) => {
-      socket.emit('accept-call', {
-        to: call.from,
-        from: userId,
-        answer: data,
-      });
-    });
-
-    peer.current.on('stream', (remoteStream: MediaStream) => {
-      if (userVideo.current) {
-        userVideo.current.srcObject = remoteStream;
-      }
-    });
-
-    peer.current.signal(call.offer);
-    console.log('✅ Call accepted');
-  };
-
-  // Reject call
-  const rejectCall = (callData?: any) => {
-    console.log('📞 Rejecting call...');
-    
-    // Использовать переданные данные или состояние
-    const callToReject = callData || call;
-    
-    // Проверка на null
-    if (!callToReject || !callToReject.from) {
-      console.error('❌ Cannot reject call: call data is null');
-      setCall(null);
-      setCalling(false);
-      return;
-    }
-
-    // Отправить событие отклонения
-    socket.emit('reject-call', {
-      to: callToReject.from,
-      from: userId,
-    });
-    console.log('✅ Emitted reject-call event');
-
-    // Очистить состояние
-    setCall(null);
-    setCalling(false);
-  };
-
-  // End call
-  const endCall = () => {
-    console.log('📞 Ending call...');
-    
-    // 1. Send end-call event to other user
-    socket.emit('end-call', {
-      to: call?.from || callAccepted,
-      from: userId,
-    });
-    console.log('✅ Emitted end-call event');
-    
-    // 2. Destroy peer connection
-    if (peer.current) {
-      peer.current.destroy();
-      peer.current = null;
-      console.log('✅ Peer destroyed');
-    }
-    
-    // 3. Stop media stream (microphone)
-    if (stream) {
       stream.getTracks().forEach((track) => {
-        track.stop();
-        console.log('✅ Track stopped:', track.kind);
+        pc.addTrack(track, stream);
       });
-      setStream(null);
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      socket.emit('call-user', {
+        to: targetUserId,
+        from: userId,
+        fromUsername: localStorage.getItem('username') || 'User',
+        offer: pc.localDescription,
+      });
+
+      setIsCalling(true);
+    } catch (error) {
+      console.error('Error starting call:', error);
+      alert('Не удалось получить доступ к камере/микрофону');
     }
-    
-    // 4. Reset call state
-    setCall(null);
-    setCallEnded(true);
-    setCallAccepted(false);
-    setCalling(false);
-    setIsMuted(false);
-    
-    console.log('✅ Call ended');
   };
 
-  // Toggle mute
+  // Принятие звонка
+  const acceptCall = async () => {
+    if (!socket || !userId || !incomingCall) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStreamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      const pc = createPeerConnection();
+
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
+
+      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      socket.emit('accept-call', {
+        to: incomingCall.from,
+        from: userId,
+        answer: pc.localDescription,
+      });
+
+      setIncomingCall(null);
+      setIsCalling(true);
+      setCallAccepted(true);
+      setCallEnded(false);
+    } catch (error) {
+      console.error('Error accepting call:', error);
+    }
+  };
+
+  // Отклонение звонка
+  const rejectCall = () => {
+    if (!socket || !userId || !incomingCall) return;
+
+    socket.emit('reject-call', {
+      to: incomingCall.from,
+      from: userId,
+    });
+
+    setIncomingCall(null);
+  };
+
+  // Завершение звонка
+  const endCall = () => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    setIsCalling(false);
+    setIncomingCall(null);
+    setCallAccepted(false);
+    setCallEnded(true);
+    setIsMuted(false);
+  };
+
+  // Переключение звука
   const toggleMute = () => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
-        setIsMuted(!isMuted);
+        setIsMuted(!audioTrack.enabled);
       }
     }
   };
 
   return {
-    call,
+    isConnected,
+    isCalling,
+    incomingCall,
+    call: incomingCall,
     callAccepted,
     callEnded,
-    calling,
     isMuted,
-    myVideo,
-    userVideo,
-    getMedia,
-    callUser,
+    localVideoRef,
+    remoteVideoRef,
+    startCall,
     acceptCall,
     rejectCall,
     endCall,
     toggleMute,
+    setCallAccepted,
+    setCallEnded,
   };
-}
+};
+
+export const getSocket = () => socket;

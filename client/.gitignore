@@ -1,4 +1,28 @@
-node_modules
-dist
+node_modules/
+dist/
+dist-electron/
 .env
+.env.local
+.env.production
 *.log
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build cache
+.vite/
+.cache/
+
+# Test
+coverage/
+.nyc_output/
