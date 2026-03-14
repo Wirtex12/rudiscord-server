@@ -49,10 +49,28 @@ export class AuthService {
     return userId;
   }
 
+  // Generate unique 6-digit short ID for friend requests
+  private generateShortId(): string {
+    const digits = '0123456789';
+    let shortId = '';
+    for (let i = 0; i < 6; i++) {
+      shortId += digits[Math.floor(Math.random() * 10)];
+    }
+    return shortId;
+  }
+
   // Check if user ID is unique
   private async isUserIdUnique(userId: string): Promise<boolean> {
     const existing = await this.prisma.user.findUnique({
       where: { userId },
+    });
+    return !existing;
+  }
+
+  // Check if short ID is unique
+  private async isShortIdUnique(shortId: string): Promise<boolean> {
+    const existing = await this.prisma.user.findUnique({
+      where: { shortId },
     });
     return !existing;
   }
@@ -62,17 +80,35 @@ export class AuthService {
     let userId: string;
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     do {
       userId = this.generateUserId();
       attempts++;
     } while (!(await this.isUserIdUnique(userId)) && attempts < maxAttempts);
-    
+
     if (attempts >= maxAttempts) {
       throw new Error('Failed to generate unique user ID');
     }
-    
+
     return userId;
+  }
+
+  // Generate unique short ID with retry
+  private async generateUniqueShortId(): Promise<string> {
+    let shortId: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      shortId = this.generateShortId();
+      attempts++;
+    } while (!(await this.isShortIdUnique(shortId)) && attempts < maxAttempts);
+
+    if (attempts >= maxAttempts) {
+      throw new Error('Failed to generate unique short ID');
+    }
+
+    return shortId;
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
@@ -86,12 +122,16 @@ export class AuthService {
 
     // Generate unique 8-digit user ID
     const userId = await this.generateUniqueUserId();
+    
+    // Generate unique 6-digit short ID for friend requests
+    const shortId = await this.generateUniqueShortId();
 
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
     const user = await this.prisma.user.create({
       data: {
         userId,
+        shortId,
         username: registerDto.username,
         email: registerDto.email,
         passwordHash,
@@ -99,6 +139,7 @@ export class AuthService {
       select: {
         id: true,
         userId: true,
+        shortId: true,
         username: true,
         email: true,
         avatar: true,
@@ -115,6 +156,7 @@ export class AuthService {
       user: {
         id: user.id,
         userId: user.userId || undefined,
+        shortId: user.shortId,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
@@ -131,6 +173,7 @@ export class AuthService {
       select: {
         id: true,
         userId: true,
+        shortId: true,
         username: true,
         email: true,
         avatar: true,
@@ -156,6 +199,7 @@ export class AuthService {
       user: {
         id: user.id,
         userId: user.userId || undefined,
+        shortId: user.shortId,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
@@ -164,7 +208,7 @@ export class AuthService {
     };
   }
 
-  async verifyToken(token: string): Promise<{ valid: boolean; user?: { id: string; username: string; email: string; userId?: string } }> {
+  async verifyToken(token: string): Promise<{ valid: boolean; user?: { id: string; username: string; email: string; shortId?: string } }> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
@@ -172,6 +216,12 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          shortId: true,
+        },
       });
 
       if (!user) {
@@ -184,7 +234,7 @@ export class AuthService {
           id: user.id,
           username: user.username,
           email: user.email,
-          userId: user.userId || undefined,
+          shortId: user.shortId,
         },
       };
     } catch {
@@ -544,6 +594,7 @@ export class AuthService {
       select: {
         id: true,
         userId: true,
+        shortId: true,
         username: true,
         email: true,
         avatar: true,
@@ -562,6 +613,7 @@ export class AuthService {
       user: {
         id: user.id,
         userId: user.userId || undefined,
+        shortId: user.shortId,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
@@ -598,6 +650,7 @@ export class AuthService {
       select: {
         id: true,
         userId: true,
+        shortId: true,
         username: true,
         email: true,
         avatar: true,
@@ -617,6 +670,7 @@ export class AuthService {
     return {
       id: user.id,
       userId: user.userId || undefined,
+      shortId: user.shortId,
       username: user.username,
       email: user.email,
       avatar: avatarUrl,
@@ -630,6 +684,7 @@ export class AuthService {
       select: {
         id: true,
         userId: true,
+        shortId: true,
         username: true,
         email: true,
         avatar: true,
@@ -649,6 +704,7 @@ export class AuthService {
     return {
       id: user.id,
       userId: user.userId || undefined,
+      shortId: user.shortId,
       username: user.username,
       email: user.email,
       avatar: null,

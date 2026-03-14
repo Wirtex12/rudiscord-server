@@ -9,6 +9,7 @@ const API_URL = 'http://localhost:3000';
 interface User {
   id: string;
   userId?: string;
+  shortId?: string;  // 6-значный код для добавления в друзья
   username: string;
   email: string;
   avatar?: string | null;
@@ -407,6 +408,22 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
                 <p className="info-label">
                   <span className="label">Email:</span> {maskEmail(user.email)}
                 </p>
+                <div className="user-id-block">
+                  <p className="info-label user-id-label">
+                    <span className="label">Friend Code:</span>
+                  </p>
+                  <div className="user-id-value friend-code">
+                    {user.shortId ? user.shortId : 'Not available'}
+                  </div>
+                </div>
+                <div className="user-id-block">
+                  <p className="info-label user-id-label">
+                    <span className="label">User ID:</span>
+                  </p>
+                  <div className="user-id-value">
+                    {user.id ? user.id : 'ID not available'}
+                  </div>
+                </div>
                 {saveMessage && (
                   <p className={`save-message ${saveMessage.includes('❌') ? 'error' : 'success'}`}>
                     {saveMessage}

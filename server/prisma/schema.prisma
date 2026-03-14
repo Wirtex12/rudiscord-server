@@ -13,6 +13,7 @@ datasource db {
 model User {
   id                  String   @id @default(uuid())
   userId              String?  @unique
+  shortId             String   @unique
   username            String   @unique
   email               String   @unique
   avatar              String?
@@ -22,7 +23,7 @@ model User {
 
   sentFriendships     Friendship[] @relation("sentFriendships")
   receivedFriendships Friendship[] @relation("receivedFriendships")
-  
+
   conversations       Conversation[] @relation("ConversationParticipants")
   sentMessages        Message[]
 }

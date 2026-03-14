@@ -648,6 +648,46 @@
   min-width: 70px;
 }
 
+/* User ID Block */
+.settings-user-info .user-id-block {
+  margin: 12px 0;
+}
+
+.settings-user-info .user-id-label {
+  margin-bottom: 8px !important;
+}
+
+.settings-user-info .user-id-value {
+  background-color: #202225;
+  padding: 10px 12px;
+  border-radius: 4px;
+  color: #72767d;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  word-break: break-all;
+  border: 1px solid #2f3136;
+  user-select: all;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.settings-user-info .user-id-value.friend-code {
+  font-size: 18px;
+  font-weight: 600;
+  color: #5865f2;
+  text-align: center;
+  letter-spacing: 2px;
+}
+
+.settings-user-info .user-id-value:hover {
+  background-color: #2f3136;
+  border-color: #4f545c;
+}
+
+.settings-user-info .user-id-value:active {
+  background-color: #36393f;
+}
+
 /* Update section */
 .update-section {
   margin-top: 16px;

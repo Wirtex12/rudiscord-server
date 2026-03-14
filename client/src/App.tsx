@@ -14,6 +14,8 @@ interface Message {
 
 interface User {
   id: string;
+  userId?: string;
+  shortId?: string;  // 6-значный код для добавления в друзья
   username: string;
   email: string;
   avatar?: string | null;
@@ -126,12 +128,16 @@ function App() {
           ...(response.data.user.userId && { userId: response.data.user.userId })
         };
 
-        // Save userId to storage
+        // Save userId and id to storage
         if (response.data.user.userId) {
           storage.setItem('userId', response.data.user.userId);
         }
+        if (response.data.user.id) {
+          storage.setItem('userId', response.data.user.id);
+        }
 
         console.log('[App] Auto-login with user:', user);
+        console.log('[App] User ID:', user.id);
         setCurrentUser(user);
         setScreen('chat');
       } else {
@@ -212,12 +218,16 @@ function App() {
           ...(userResponse.data.user.userId && { userId: userResponse.data.user.userId })
         };
 
-        // Save userId to storage
+        // Save userId and id to storage
         if (userResponse.data.user.userId) {
           storage.setItem('userId', userResponse.data.user.userId);
         }
+        if (userResponse.data.user.id) {
+          storage.setItem('userId', userResponse.data.user.id);
+        }
 
         console.log('[App] Login with user:', user);
+        console.log('[App] User ID:', user.id);
         setCurrentUser(user);
         setScreen('chat');
         setEmail('');

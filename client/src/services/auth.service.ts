@@ -3,6 +3,7 @@ import api from '../api/axios';
 export interface User {
   id: string;
   userId?: string;
+  shortId?: string;  // 6-значный код для добавления в друзья
   username: string;
   email: string;
   avatar?: string | null;
