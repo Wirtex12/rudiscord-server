@@ -147,19 +147,19 @@
   cursor: not-allowed;
 }
 
-.friend-code-help {
+.id-help {
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid #2f3136;
 }
 
-.friend-code-help h4 {
+.id-help h4 {
   margin: 0 0 8px 0;
   font-size: 0.9rem;
   color: #dcddde;
 }
 
-.friend-code-help p {
+.id-help p {
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.5;

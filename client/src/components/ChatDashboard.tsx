@@ -410,18 +410,10 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
                 </p>
                 <div className="user-id-block">
                   <p className="info-label user-id-label">
-                    <span className="label">Friend Code:</span>
+                    <span className="label">ID:</span>
                   </p>
                   <div className="user-id-value friend-code">
                     {user.shortId ? user.shortId : 'Not available'}
-                  </div>
-                </div>
-                <div className="user-id-block">
-                  <p className="info-label user-id-label">
-                    <span className="label">User ID:</span>
-                  </p>
-                  <div className="user-id-value">
-                    {user.id ? user.id : 'ID not available'}
                   </div>
                 </div>
                 {saveMessage && (

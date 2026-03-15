@@ -23,15 +23,15 @@ export function AddFriendModal({ isOpen, onClose, onAddFriend }: AddFriendModalP
     const isUsername = /^[a-zA-Z0-9_]{3,20}$/.test(identifier);
 
     if (!isShortId && !isUsername) {
-      setError('Please enter a valid 6-digit Friend Code or username (3-20 characters)');
+      setError('Please enter a valid 6-digit ID or username (3-20 characters)');
       setLoading(false);
       return;
     }
 
     try {
       await onAddFriend(identifier);
-      setSuccess(isShortId 
-        ? `Friend request sent to user with code ${identifier}!` 
+      setSuccess(isShortId
+        ? `Friend request sent to user with ID ${identifier}!`
         : `Friend request sent to ${identifier}!`);
       
       setTimeout(() => {
@@ -70,12 +70,12 @@ export function AddFriendModal({ isOpen, onClose, onAddFriend }: AddFriendModalP
 
         <div className="add-friend-body">
           <p className="add-friend-description">
-            You can add a friend using their <strong>Friend Code</strong> or <strong>username</strong>.
+            You can add a friend using their <strong>ID</strong> or <strong>username</strong>.
           </p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="friend-identifier">Friend Code or Username</label>
+              <label htmlFor="friend-identifier">ID or Username</label>
               <input
                 id="friend-identifier"
                 type="text"
@@ -102,11 +102,11 @@ export function AddFriendModal({ isOpen, onClose, onAddFriend }: AddFriendModalP
             </div>
           </form>
 
-          <div className="friend-code-help">
-            <h4>What is a Friend Code?</h4>
+          <div className="id-help">
+            <h4>What is an ID?</h4>
             <p>
-              A Friend Code is a unique 6-digit number assigned to each user. 
-              You can find your Friend Code in your profile settings.
+              An ID is a unique 6-digit number assigned to each user.
+              You can find your ID in your profile settings.
             </p>
           </div>
         </div>
