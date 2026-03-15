@@ -436,7 +436,7 @@ body {
 /* Gender Selector */
 .gender-selector {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
 }
 
@@ -444,15 +444,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 18px;
+  gap: 4px;
+  padding: 8px 12px;
   background-color: #2f3136;
   border: 2px solid #40444b;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: #72767d;
-  min-width: 100px;
+  min-width: 70px;
 }
 
 .gender-btn:hover {
@@ -487,11 +487,11 @@ body {
 }
 
 .gender-icon {
-  width: 50px;
-  height: 100px;
+  width: 25px;
+  height: 50px;
 }
 
 .gender-btn span {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
