@@ -9,7 +9,8 @@ const API_URL = 'http://localhost:3000';
 interface User {
   id: string;
   userId?: string;
-  shortId?: string;  // 6-значный код для добавления в друзья
+  shortId?: string;
+  gender?: 'male' | 'female' | null;
   username: string;
   email: string;
   avatar?: string | null;
@@ -384,6 +385,29 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
                     <div className="value-container">
                       <p className="info-label">
                         <span className="label">Name:</span> {user.username}
+                        {user.gender && (
+                          <span className={`gender-icon-small ${user.gender}`} title={user.gender === 'male' ? 'Male' : 'Female'}>
+                            {user.gender === 'male' ? (
+                              <svg viewBox="0 0 100 200">
+                                <circle cx="50" cy="40" r="25" fill="currentColor"/>
+                                <rect x="25" y="70" width="50" height="60" rx="10" fill="currentColor"/>
+                                <line x1="25" y1="80" x2="5" y2="110" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                <line x1="75" y1="80" x2="95" y2="110" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                <line x1="35" y1="130" x2="35" y2="190" stroke="currentColor" strokeWidth="14" strokeLinecap="round"/>
+                                <line x1="65" y1="130" x2="65" y2="190" stroke="currentColor" strokeWidth="14" strokeLinecap="round"/>
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 100 200">
+                                <circle cx="50" cy="40" r="25" fill="currentColor"/>
+                                <polygon points="50,70 80,140 20,140" fill="currentColor"/>
+                                <line x1="20" y1="80" x2="5" y2="110" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                <line x1="80" y1="80" x2="95" y2="110" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+                                <line x1="35" y1="140" x2="35" y2="190" stroke="currentColor" strokeWidth="14" strokeLinecap="round"/>
+                                <line x1="65" y1="140" x2="65" y2="190" stroke="currentColor" strokeWidth="14" strokeLinecap="round"/>
+                              </svg>
+                            )}
+                          </span>
+                        )}
                       </p>
                       <button
                         className="edit-btn"

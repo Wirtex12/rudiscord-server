@@ -8,6 +8,7 @@ export interface User {
   id: string;
   userId?: string;
   shortId?: string;  // 6-значный код для добавления в друзья
+  gender?: 'male' | 'female' | null;
   username: string;
   email: string;
   avatar?: string | null;

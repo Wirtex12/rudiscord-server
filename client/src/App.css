@@ -432,3 +432,66 @@ body {
   width: 100%;
   margin-top: 10px;
 }
+
+/* Gender Selector */
+.gender-selector {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.gender-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background-color: #2f3136;
+  border: 2px solid #40444b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #72767d;
+  min-width: 120px;
+}
+
+.gender-btn:hover {
+  background-color: #40444b;
+  border-color: #5865f2;
+  color: #dcddde;
+}
+
+.gender-btn.selected {
+  border-color: currentColor;
+  background-color: rgba(88, 101, 242, 0.1);
+}
+
+.gender-btn.male {
+  color: #5BA3D0;
+}
+
+.gender-btn.male.selected {
+  background-color: rgba(91, 163, 208, 0.2);
+  border-color: #5BA3D0;
+  color: #7BC4E8;
+}
+
+.gender-btn.female {
+  color: #E05A8A;
+}
+
+.gender-btn.female.selected {
+  background-color: rgba(224, 90, 138, 0.2);
+  border-color: #E05A8A;
+  color: #F07AAB;
+}
+
+.gender-icon {
+  width: 60px;
+  height: 120px;
+}
+
+.gender-btn span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}

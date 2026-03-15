@@ -132,6 +132,7 @@ export class AuthService {
       data: {
         userId,
         shortId,
+        gender: registerDto.gender,
         username: registerDto.username,
         email: registerDto.email,
         passwordHash,
@@ -140,6 +141,7 @@ export class AuthService {
         id: true,
         userId: true,
         shortId: true,
+        gender: true,
         username: true,
         email: true,
         avatar: true,
@@ -157,6 +159,7 @@ export class AuthService {
         id: user.id,
         userId: user.userId || undefined,
         shortId: user.shortId,
+        gender: user.gender as 'male' | 'female' | null,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
@@ -174,6 +177,7 @@ export class AuthService {
         id: true,
         userId: true,
         shortId: true,
+        gender: true,
         username: true,
         email: true,
         avatar: true,
@@ -200,6 +204,7 @@ export class AuthService {
         id: user.id,
         userId: user.userId || undefined,
         shortId: user.shortId,
+        gender: user.gender as 'male' | 'female' | null,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
@@ -208,7 +213,7 @@ export class AuthService {
     };
   }
 
-  async verifyToken(token: string): Promise<{ valid: boolean; user?: { id: string; username: string; email: string; shortId?: string } }> {
+  async verifyToken(token: string): Promise<{ valid: boolean; user?: { id: string; username: string; email: string; shortId?: string; gender?: 'male' | 'female' | null } }> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
@@ -221,6 +226,7 @@ export class AuthService {
           username: true,
           email: true,
           shortId: true,
+          gender: true,
         },
       });
 
@@ -235,6 +241,7 @@ export class AuthService {
           username: user.username,
           email: user.email,
           shortId: user.shortId,
+          gender: user.gender as 'male' | 'female' | null,
         },
       };
     } catch {
@@ -651,6 +658,7 @@ export class AuthService {
         id: true,
         userId: true,
         shortId: true,
+        gender: true,
         username: true,
         email: true,
         avatar: true,
@@ -671,6 +679,7 @@ export class AuthService {
       id: user.id,
       userId: user.userId || undefined,
       shortId: user.shortId,
+      gender: user.gender as 'male' | 'female' | null,
       username: user.username,
       email: user.email,
       avatar: avatarUrl,
@@ -685,6 +694,7 @@ export class AuthService {
         id: true,
         userId: true,
         shortId: true,
+        gender: true,
         username: true,
         email: true,
         avatar: true,
@@ -705,6 +715,7 @@ export class AuthService {
       id: user.id,
       userId: user.userId || undefined,
       shortId: user.shortId,
+      gender: user.gender as 'male' | 'female' | null,
       username: user.username,
       email: user.email,
       avatar: null,
