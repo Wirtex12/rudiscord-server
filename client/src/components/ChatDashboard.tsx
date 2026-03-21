@@ -53,6 +53,12 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [showCallModal, setShowCallModal] = useState(false);
   const [isOutgoingCall, setIsOutgoingCall] = useState(false);
+  
+  // Update states
+  const [currentVersion, setCurrentVersion] = useState('');
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error' | 'not-available'>('idle');
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [updateError, setUpdateError] = useState('');
 
   // Real friends list (loaded from server)
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -79,6 +85,77 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
   useEffect(() => {
     setEditUsername(user.username);
   }, [user.username]);
+
+  // Setup auto-update listeners
+  useEffect(() => {
+    // Get current version
+    if ((window as any).electron) {
+      (window as any).electron.invoke('get-app-version').then((version: string) => {
+        setCurrentVersion(version);
+      });
+    }
+
+    // Listen for update events (from electron main process)
+    const { electron } = window as any;
+    if (electron?.receive) {
+      electron.receive('update-checking', () => {
+        console.log('🔄 Update checking...');
+        setUpdateStatus('checking');
+        setUpdateError('');
+      });
+
+      electron.receive('update-available', (info: { version: string }) => {
+        console.log('✅ Update available:', info.version);
+        setUpdateStatus('available');
+        setSaveMessage(`New version ${info.version} available! Downloading...`);
+      });
+
+      electron.receive('update-not-available', () => {
+        console.log('⭕ No updates available');
+        setUpdateStatus('not-available');
+        setSaveMessage('✅ You have the latest version!');
+        setTimeout(() => {
+          setUpdateStatus('idle');
+          setSaveMessage('');
+        }, 3000);
+      });
+
+      electron.receive('update-progress', (data: { percent: number }) => {
+        console.log('📥 Download progress:', data.percent);
+        setUpdateStatus('downloading');
+        setUpdateProgress(data.percent);
+      });
+
+      electron.receive('update-ready', () => {
+        console.log('✅ Update ready to install');
+        setUpdateStatus('ready');
+        setSaveMessage('🔄 Update ready! Restart to apply.');
+      });
+
+      electron.receive('update-error', (data: { message: string }) => {
+        console.error('❌ Update error:', data.message);
+        setUpdateStatus('error');
+        setUpdateError(data.message);
+        setSaveMessage(`❌ Update error: ${data.message}`);
+        setTimeout(() => {
+          setUpdateStatus('idle');
+          setSaveMessage('');
+        }, 5000);
+      });
+    }
+
+    return () => {
+      // Cleanup listeners
+      if (electron?.removeListener) {
+        electron.removeListener('update-checking', () => {});
+        electron.removeListener('update-available', () => {});
+        electron.removeListener('update-not-available', () => {});
+        electron.removeListener('update-progress', () => {});
+        electron.removeListener('update-ready', () => {});
+        electron.removeListener('update-error', () => {});
+      }
+    };
+  }, []);
 
   // Load friends from server
   useEffect(() => {
@@ -216,13 +293,29 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
   // Check for updates
   const handleCheckForUpdates = () => {
     console.log('🔍 Checking for updates manually...');
-    if ((window as any).autoUpdate) {
-      (window as any).autoUpdate.checkForUpdates();
+    setUpdateStatus('checking');
+    setUpdateError('');
+    
+    const { electron } = window as any;
+    if (electron?.send) {
+      electron.send('check-for-updates');
       setSaveMessage('🔍 Checking for updates...');
     } else {
-      setSaveMessage('⚠️ Auto-update not available in development mode');
+      setUpdateStatus('error');
+      setSaveMessage('⚠️ Auto-update not available');
+      setTimeout(() => {
+        setUpdateStatus('idle');
+        setSaveMessage('');
+      }, 3000);
     }
-    setTimeout(() => setSaveMessage(''), 3000);
+  };
+
+  // Restart to apply update
+  const handleRestartForUpdate = () => {
+    const { electron } = window as any;
+    if (electron?.send) {
+      electron.send('quit-and-install');
+    }
   };
 
   // Avatar upload (Settings Modal only)
@@ -446,9 +539,29 @@ export function ChatDashboard({ user, onLogout, onUpdateUser }: ChatDashboardPro
                   </p>
                 )}
                 <div className="update-section">
-                  <button className="check-updates-btn" onClick={handleCheckForUpdates}>
-                    🔍 Check for Updates
+                  <div className="version-info">
+                    <span className="version-label">Current Version:</span>
+                    <span className="version-value">{currentVersion || '...'}</span>
+                  </div>
+                  <button className="check-updates-btn" onClick={handleCheckForUpdates} disabled={updateStatus === 'checking'}>
+                    {updateStatus === 'checking' ? '🔄 Checking...' : '🔍 Check for Updates'}
                   </button>
+                  {updateStatus === 'downloading' && (
+                    <div className="update-progress">
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${updateProgress}%` }}></div>
+                      </div>
+                      <span className="progress-text">{updateProgress.toFixed(0)}%</span>
+                    </div>
+                  )}
+                  {updateStatus === 'ready' && (
+                    <button className="restart-btn" onClick={handleRestartForUpdate}>
+                      🔄 Restart to Apply Update
+                    </button>
+                  )}
+                  {updateStatus === 'error' && updateError && (
+                    <p className="update-error">❌ {updateError}</p>
+                  )}
                 </div>
               </div>
             </div>
